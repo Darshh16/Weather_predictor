@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Portfolio{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h2 class="text-2xl font-bold text-white">Portfolio</h2>
+        <p class="text-gray-400 text-sm mt-1">Paper trading positions & performance</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-card p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Balance</p>
+            <p class="text-2xl font-bold text-white mt-1">${{ "%.2f"|format(portfolio.balance) }}</p>
+        </div>
+        <div class="glass-card p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Equity</p>
+            <p class="text-2xl font-bold text-cyan-400 mt-1">${{ "%.2f"|format(portfolio.equity) }}</p>
+        </div>
+        <div class="glass-card p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Total P/L</p>
+            <p class="text-2xl font-bold {% if portfolio.total_pnl >= 0 %}text-emerald-400{% else %}text-red-400{% endif %} mt-1">
+                ${{ "%.2f"|format(portfolio.total_pnl) }}</p>
+        </div>
+        <div class="glass-card p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Win Rate</p>
+            <p class="text-2xl font-bold text-amber-400 mt-1">{{ "%.1f"|format(portfolio.win_rate) }}%</p>
+            <p class="text-xs text-gray-500 mt-1">{{ portfolio.wins }}W / {{ portfolio.losses }}L of {{ portfolio.total_trades }}</p>
+        </div>
+    </div>
+
+    {% if portfolio.open_positions %}
+    <div class="glass-card p-6">
+        <h3 class="text-lg font-semibold text-white mb-4">
+            <span class="w-2 h-2 bg-emerald-400 rounded-full inline-block animate-pulse mr-2"></span>
+            Open Positions ({{ portfolio.open_positions|length }})
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-gray-400 text-xs uppercase border-b border-gray-800">
+                        <th class="text-left py-2 px-3">City</th>
+                        <th class="text-left py-2 px-3">Direction</th>
+                        <th class="text-right py-2 px-3">Size</th>
+                        <th class="text-right py-2 px-3">Entry</th>
+                        <th class="text-right py-2 px-3">Kelly %</th>
+                        <th class="text-right py-2 px-3">Edge at Entry</th>
+                        <th class="text-left py-2 px-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in portfolio.open_positions %}
+                    <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
+                        <td class="py-2 px-3 text-white font-medium">{{ t.city }}</td>
+                        <td class="py-2 px-3 {% if t.direction == 'YES' %}text-emerald-400{% else %}text-red-400{% endif %} font-bold">
+                            {{ t.direction }}</td>
+                        <td class="py-2 px-3 text-right font-mono text-white">${{ "%.2f"|format(t.size) }}</td>
+                        <td class="py-2 px-3 text-right font-mono text-gray-300">{{ "%.4f"|format(t.entry_price) }}</td>
+                        <td class="py-2 px-3 text-right font-mono text-gray-300">{{ "%.2f"|format(t.kelly_fraction * 100) }}%</td>
+                        <td class="py-2 px-3 text-right font-mono
+                            {% if t.edge_at_entry > 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                            {{ "%+.4f"|format(t.edge_at_entry) }}</td>
+                        <td class="py-2 px-3">
+                            <form hx-post="/hedge" hx-target="#hedge-result-{{ t.id }}" hx-swap="innerHTML" class="inline">
+                                <input type="hidden" name="city" value="{{ t.city }}">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-400
+                                    rounded text-xs transition-all">🔄 Check Hedge</button>
+                            </form>
+                            <div id="hedge-result-{{ t.id }}" class="mt-1"></div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if portfolio.recent_hedges %}
+    <div class="glass-card p-6">
+        <h3 class="text-lg font-semibold text-amber-400 mb-4">🔄 Recent Hedges</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-gray-400 text-xs uppercase border-b border-gray-800">
+                        <th class="text-left py-2 px-3">City</th>
+                        <th class="text-left py-2 px-3">Direction</th>
+                        <th class="text-right py-2 px-3">Size</th>
+                        <th class="text-right py-2 px-3">P/L</th>
+                        <th class="text-right py-2 px-3">Edge Change</th>
+                        <th class="text-left py-2 px-3">Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in portfolio.recent_hedges %}
+                    <tr class="border-b border-gray-800/50 hover:bg-amber-500/5">
+                        <td class="py-2 px-3 text-white">{{ h.city }}</td>
+                        <td class="py-2 px-3 {% if h.direction == 'YES' %}text-emerald-400{% else %}text-red-400{% endif %}">
+                            {{ h.direction }}</td>
+                        <td class="py-2 px-3 text-right font-mono">${{ "%.2f"|format(h.size) }}</td>
+                        <td class="py-2 px-3 text-right font-mono
+                            {% if h.pnl > 0 %}text-emerald-400{% elif h.pnl < 0 %}text-red-400{% else %}text-gray-400{% endif %}">
+                            ${{ "%.2f"|format(h.pnl) }}</td>
+                        <td class="py-2 px-3 text-right font-mono text-gray-400">
+                            {{ "%.4f"|format(h.edge_at_entry or 0) }} → {{ "%.4f"|format(h.edge_at_action or 0) }}
+                        </td>
+                        <td class="py-2 px-3 text-xs text-gray-400">{{ (h.reasoning or '')[:60] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="glass-card p-6">
+        <h3 class="text-lg font-semibold text-white mb-4">All Trades ({{ portfolio.total_trades }})</h3>
+        {% if portfolio.recent_trades %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-gray-400 text-xs uppercase border-b border-gray-800">
+                        <th class="text-left py-2 px-3">City</th>
+                        <th class="text-left py-2 px-3">Type</th>
+                        <th class="text-left py-2 px-3">Dir</th>
+                        <th class="text-right py-2 px-3">Size</th>
+                        <th class="text-right py-2 px-3">Entry</th>
+                        <th class="text-right py-2 px-3">Exit</th>
+                        <th class="text-right py-2 px-3">P/L</th>
+                        <th class="text-left py-2 px-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in portfolio.recent_trades %}
+                    <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
+                        <td class="py-2 px-3 text-white">{{ t.city }}</td>
+                        <td class="py-2 px-3">
+                            <span class="px-2 py-0.5 rounded text-xs
+                                {% if t.trade_type == 'hedge' %}bg-amber-500/20 text-amber-400
+                                {% elif t.trade_type == 'close' %}bg-gray-500/20 text-gray-400
+                                {% else %}bg-emerald-500/20 text-emerald-400{% endif %}">{{ t.trade_type }}</span>
+                        </td>
+                        <td class="py-2 px-3 {% if t.direction == 'YES' %}text-emerald-400{% else %}text-red-400{% endif %}">
+                            {{ t.direction }}</td>
+                        <td class="py-2 px-3 text-right font-mono text-white">${{ "%.2f"|format(t.size) }}</td>
+                        <td class="py-2 px-3 text-right font-mono text-gray-300">{{ "%.4f"|format(t.entry_price) }}</td>
+                        <td class="py-2 px-3 text-right font-mono text-gray-300">{{ "%.4f"|format(t.exit_price or 0) }}</td>
+                        <td class="py-2 px-3 text-right font-mono
+                            {% if t.pnl > 0 %}text-emerald-400{% elif t.pnl < 0 %}text-red-400{% else %}text-gray-400{% endif %}">
+                            ${{ "%.2f"|format(t.pnl) }}</td>
+                        <td class="py-2 px-3">
+                            <span class="{% if t.status == 'open' %}text-emerald-400{% else %}text-gray-500{% endif %}">
+                            {{ t.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-center py-6">No trades recorded yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

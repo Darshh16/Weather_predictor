@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h2 class="text-2xl font-bold text-white">Analytics</h2>
+        <p class="text-gray-400 text-sm mt-1">Performance metrics, accuracy & hedge effectiveness</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="glass-card p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Total Trades</p>
+            <p class="text-2xl font-bold text-white mt-1">{{ report.trading_performance.total_trades }}</p>
+        </div>
+        <div class="glass-card p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Win Rate</p>
+            <p class="text-2xl font-bold text-emerald-400 mt-1">{{ "%.1f"|format(report.trading_performance.win_rate) }}%</p>
+        </div>
+        <div class="glass-card p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">ROI</p>
+            <p class="text-2xl font-bold {% if report.trading_performance.roi >= 0 %}text-emerald-400{% else %}text-red-400{% endif %} mt-1">
+                {{ "%.2f"|format(report.trading_performance.roi) }}%</p>
+        </div>
+        <div class="glass-card p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Total Hedges</p>
+            <p class="text-2xl font-bold text-amber-400 mt-1">{{ report.hedge_effectiveness.total_hedges }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Trading Performance</h3>
+            <div class="space-y-3">
+                {% set tp = report.trading_performance %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Total P/L</span>
+                    <span class="font-mono {% if tp.total_pnl >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                        ${{ "%.2f"|format(tp.total_pnl) }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Avg P/L per Trade</span>
+                    <span class="font-mono text-gray-300">${{ "%.2f"|format(tp.avg_pnl) }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Best Trade</span>
+                    <span class="font-mono text-emerald-400">${{ "%.2f"|format(tp.best_trade) }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Worst Trade</span>
+                    <span class="font-mono text-red-400">${{ "%.2f"|format(tp.worst_trade) }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Avg Kelly Utilization</span>
+                    <span class="font-mono text-cyan-400">{{ "%.2f"|format(tp.avg_kelly_utilization * 100) }}%</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Wins / Losses</span>
+                    <span class="font-mono text-gray-300">{{ tp.wins }} / {{ tp.losses }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Prediction Accuracy</h3>
+            <div class="space-y-3">
+                {% set pa = report.prediction_accuracy %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Total Predictions</span>
+                    <span class="font-mono text-white">{{ pa.total }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Avg Positive Edge Rate</span>
+                    <span class="font-mono text-emerald-400">{{ "%.1f"|format(pa.avg_positive_edge * 100) }}%</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Avg Confidence</span>
+                    <span class="font-mono text-cyan-400">{{ "%.1f"|format(pa.avg_confidence * 100) }}%</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Avg Edge Magnitude</span>
+                    <span class="font-mono text-gray-300">{{ "%.2f"|format(pa.avg_edge_magnitude * 100) }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card p-6">
+            <h3 class="text-lg font-semibold text-amber-400 mb-4">🔄 Hedge Effectiveness</h3>
+            <div class="space-y-3">
+                {% set he = report.hedge_effectiveness %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Total Hedges Executed</span>
+                    <span class="font-mono text-amber-400">{{ he.total_hedges }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Hedge P/L Impact</span>
+                    <span class="font-mono {% if he.hedge_pnl >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                        ${{ "%.2f"|format(he.hedge_pnl) }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Avg Edge Change at Hedge</span>
+                    <span class="font-mono text-gray-300">{{ "%.4f"|format(he.avg_edge_change) }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Est. P/L Saved by Hedging</span>
+                    <span class="font-mono text-emerald-400">${{ "%.2f"|format(he.pnl_saved_estimate) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Performance by City</h3>
+            {% if report.city_breakdown %}
+            <div class="space-y-2">
+                {% for c in report.city_breakdown %}
+                <div class="flex items-center justify-between bg-gray-800/40 rounded-lg p-3">
+                    <div>
+                        <span class="text-white font-medium text-sm">{{ c.city }}</span>
+                        <span class="text-xs text-gray-500 ml-2">{{ c.total_trades }} trades, {{ c.hedges }} hedges</span>
+                    </div>
+                    <span class="font-mono text-sm {% if c.total_pnl >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                        ${{ "%.2f"|format(c.total_pnl) }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-sm text-center py-4">No city data yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if report.daily_performance %}
+    <div class="glass-card p-6">
+        <h3 class="text-lg font-semibold text-white mb-4">Daily P/L</h3>
+        <canvas id="dailyPnlChart" height="200"></canvas>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const data = {{ report.daily_performance | tojson }};
+                if (data.length > 0 && document.getElementById('dailyPnlChart')) {
+                    initDailyChart(data);
+                }
+            });
+        </script>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

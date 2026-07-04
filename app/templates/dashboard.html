@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Dashboard</h2>
+            <p class="text-gray-400 text-sm mt-1">Real-time portfolio overview & agent activity</p>
+        </div>
+        <div class="text-xs text-gray-500">Auto-refreshes every 30s</div>
+    </div>
+
+    <div id="stats-panel" hx-get="/htmx/dashboard-stats" hx-trigger="load, every 30s" hx-swap="innerHTML">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="glass-card p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Balance</p>
+                <p class="text-2xl font-bold text-white mt-1">${{ "%.2f"|format(portfolio.balance) }}</p>
+            </div>
+            <div class="glass-card p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Total P/L</p>
+                <p class="text-2xl font-bold mt-1 {% if portfolio.total_pnl >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                    ${{ "%.2f"|format(portfolio.total_pnl) }}</p>
+            </div>
+            <div class="glass-card p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Win Rate</p>
+                <p class="text-2xl font-bold text-cyan-400 mt-1">{{ "%.1f"|format(portfolio.win_rate) }}%</p>
+            </div>
+            <div class="glass-card p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Open Trades</p>
+                <p class="text-2xl font-bold text-amber-400 mt-1">{{ portfolio.open_trades }}</p>
+            </div>
+            <div class="glass-card p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Active Hedges</p>
+                <p class="text-2xl font-bold text-purple-400 mt-1">{{ portfolio.recent_hedges|length }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 glass-card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Quick Predict</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% for key, city in cities.items() %}
+                <div class="relative">
+                    <form hx-post="/predict" hx-target="#result-{{ key }}" hx-swap="innerHTML" hx-indicator="#spin-{{ key }}">
+                        <input type="hidden" name="city" value="{{ key }}">
+                        <button type="submit"
+                            class="w-full px-4 py-3 bg-gray-700/40 hover:bg-gray-700/60 border border-gray-600/30
+                            rounded-xl text-left transition-all duration-200 hover:border-emerald-500/30 group">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-white font-medium text-sm">{{ city.name }}</p>
+                                    <p class="text-gray-500 text-xs">{{ city.country }}</p>
+                                </div>
+                                <span id="spin-{{ key }}" class="htmx-indicator text-emerald-400 animate-spin text-lg">⟳</span>
+                                <span class="text-gray-500 group-hover:text-emerald-400 transition-colors">→</span>
+                            </div>
+                        </button>
+                    </form>
+                    <div id="result-{{ key }}" class="mt-2"></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Agent Activity</h3>
+            <div class="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                {% if logs %}
+                    {% for log in logs %}
+                    <div class="flex items-start gap-2 p-2 rounded-lg bg-gray-800/30 text-xs">
+                        <span class="{% if 'HEDGE' in (log.action or '') %}text-amber-400{% elif 'TRADE' in (log.action or '') %}text-emerald-400{% else %}text-cyan-400{% endif %} mt-0.5">●</span>
+                        <div>
+                            <span class="text-gray-400">{{ log.action or 'LOG' }}</span>
+                            <p class="text-gray-300 mt-0.5">{{ (log.message or '')[:80] }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-gray-500 text-sm">No activity yet. Run a prediction to get started.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white">Recent Trades</h3>
+            <span class="text-xs text-gray-500" hx-get="/htmx/trade-history" hx-trigger="every 30s"
+                  hx-target="#trade-table" hx-swap="innerHTML">Live</span>
+        </div>
+        <div id="trade-table">
+            {% if portfolio.recent_trades %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-gray-400 text-xs uppercase border-b border-gray-800">
+                            <th class="text-left py-2 px-3">City</th>
+                            <th class="text-left py-2 px-3">Type</th>
+                            <th class="text-left py-2 px-3">Dir</th>
+                            <th class="text-right py-2 px-3">Size</th>
+                            <th class="text-right py-2 px-3">Entry</th>
+                            <th class="text-right py-2 px-3">P/L</th>
+                            <th class="text-left py-2 px-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in portfolio.recent_trades[:10] %}
+                        <tr class="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                            <td class="py-2 px-3 text-white">{{ t.city }}</td>
+                            <td class="py-2 px-3">
+                                <span class="px-2 py-0.5 rounded text-xs
+                                {% if t.trade_type == 'hedge' %}bg-amber-500/20 text-amber-400
+                                {% elif t.trade_type == 'close' %}bg-gray-500/20 text-gray-400
+                                {% else %}bg-emerald-500/20 text-emerald-400{% endif %}">
+                                {{ t.trade_type }}</span>
+                            </td>
+                            <td class="py-2 px-3 {% if t.direction == 'YES' %}text-emerald-400{% else %}text-red-400{% endif %}">
+                                {{ t.direction }}</td>
+                            <td class="py-2 px-3 text-right text-white font-mono">${{ "%.2f"|format(t.size) }}</td>
+                            <td class="py-2 px-3 text-right font-mono text-gray-300">{{ "%.4f"|format(t.entry_price) }}</td>
+                            <td class="py-2 px-3 text-right font-mono
+                                {% if t.pnl > 0 %}text-emerald-400{% elif t.pnl < 0 %}text-red-400{% else %}text-gray-400{% endif %}">
+                                ${{ "%.2f"|format(t.pnl) }}</td>
+                            <td class="py-2 px-3">
+                                <span class="w-2 h-2 rounded-full inline-block
+                                {% if t.status == 'open' %}bg-emerald-400 animate-pulse{% else %}bg-gray-500{% endif %}"></span>
+                                {{ t.status }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-sm text-center py-8">No trades yet. Run predictions to start trading.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

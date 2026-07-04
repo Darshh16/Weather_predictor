@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Weather AI Trading{% endblock %} | Prediction Platform</title>
+    <meta name="description" content="AI-powered weather prediction and paper trading platform for Polymarket">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        surface: { 50: '#f8fafc', 100: '#1e293b', 200: '#0f172a', 300: '#020617' },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-[#0a0e1a] text-gray-200 font-sans min-h-screen">
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-[#0d1221] border-r border-gray-800/50 flex flex-col fixed h-full z-30">
+            <div class="p-5 border-b border-gray-800/50">
+                <h1 class="text-xl font-bold bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
+                    ⛅ WeatherAI
+                </h1>
+                <p class="text-[11px] text-gray-500 mt-1 tracking-wider uppercase">Prediction Trading Platform</p>
+            </div>
+            <nav class="flex-1 p-3 space-y-1">
+                <a href="/dashboard"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200
+                   {% if page == 'dashboard' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}text-gray-400 hover:bg-gray-800/50 hover:text-gray-200{% endif %}">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="/markets"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200
+                   {% if page == 'markets' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}text-gray-400 hover:bg-gray-800/50 hover:text-gray-200{% endif %}">
+                    <span>🌍</span> Markets
+                </a>
+                <a href="/portfolio"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200
+                   {% if page == 'portfolio' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}text-gray-400 hover:bg-gray-800/50 hover:text-gray-200{% endif %}">
+                    <span>💼</span> Portfolio
+                </a>
+                <a href="/analytics"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200
+                   {% if page == 'analytics' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}text-gray-400 hover:bg-gray-800/50 hover:text-gray-200{% endif %}">
+                    <span>📈</span> Analytics
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-800/50">
+                <form hx-post="/refresh" hx-target="#refresh-status" hx-swap="innerHTML" hx-indicator="#refresh-spinner">
+                    <button type="submit"
+                        class="w-full px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg
+                        text-sm font-medium hover:from-emerald-500 hover:to-teal-500 transition-all duration-200
+                        flex items-center justify-center gap-2">
+                        <span id="refresh-spinner" class="htmx-indicator animate-spin">⟳</span>
+                        🔄 Refresh All
+                    </button>
+                </form>
+                <div id="refresh-status" class="mt-2 text-xs"></div>
+            </div>
+        </aside>
+        <main class="flex-1 ml-64 p-6 lg:p-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <script src="/static/js/charts.js"></script>
+</body>
+</html>

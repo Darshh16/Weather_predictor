@@ -1,0 +1,38 @@
+{% if trades %}
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-gray-400 text-xs uppercase border-b border-gray-800">
+                <th class="text-left py-2 px-3">City</th>
+                <th class="text-left py-2 px-3">Type</th>
+                <th class="text-left py-2 px-3">Dir</th>
+                <th class="text-right py-2 px-3">Size</th>
+                <th class="text-right py-2 px-3">P/L</th>
+                <th class="text-left py-2 px-3">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in trades %}
+            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
+                <td class="py-2 px-3 text-white">{{ t.city }}</td>
+                <td class="py-2 px-3">
+                    <span class="px-2 py-0.5 rounded text-xs
+                        {% if t.trade_type == 'hedge' %}bg-amber-500/20 text-amber-400
+                        {% elif t.trade_type == 'close' %}bg-gray-500/20 text-gray-400
+                        {% else %}bg-emerald-500/20 text-emerald-400{% endif %}">{{ t.trade_type }}</span>
+                </td>
+                <td class="py-2 px-3 {% if t.direction == 'YES' %}text-emerald-400{% else %}text-red-400{% endif %}">
+                    {{ t.direction }}</td>
+                <td class="py-2 px-3 text-right font-mono">${{ "%.2f"|format(t.size) }}</td>
+                <td class="py-2 px-3 text-right font-mono
+                    {% if t.pnl > 0 %}text-emerald-400{% elif t.pnl < 0 %}text-red-400{% else %}text-gray-400{% endif %}">
+                    ${{ "%.2f"|format(t.pnl) }}</td>
+                <td class="py-2 px-3">{{ t.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-gray-500 text-sm text-center py-4">No trades yet.</p>
+{% endif %}
