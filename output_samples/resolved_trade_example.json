@@ -1,0 +1,11 @@
+{
+    "city": "tokyo",
+    "direction": "YES",
+    "size": 1451.61,
+    "entry_price": 0.69,
+    "exit_price": 1.0,
+    "pnl": 652.17,
+    "status": "closed",
+    "resolution_type": "SIMULATED_RESOLUTION",
+    "resolution_note": "Model predicted 78.0%. Random roll: 0.770. Result: YES."
+}

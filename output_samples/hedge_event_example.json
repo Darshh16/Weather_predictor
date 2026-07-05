@@ -1,0 +1,14 @@
+{
+    "city": "new_york",
+    "trade_type": "hedge",
+    "trigger_reasons": [
+        "edge_flipped",
+        "large_price_move"
+    ],
+    "edge_at_entry": 0.34,
+    "edge_at_hedge": -0.04,
+    "entry_price": 0.39,
+    "price_at_hedge": 0.59,
+    "pnl": 271.63,
+    "action_taken": "full_close"
+}

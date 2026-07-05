@@ -1,0 +1,13 @@
+{
+    "city": "tokyo",
+    "model_probability": 0.78,
+    "market_probability": 0.75,
+    "edge": 0.09,
+    "recommendation": "BUY YES",
+    "kelly_fraction_raw": 0.2903,
+    "kelly_fraction_half": 0.1452,
+    "kelly_size_usd": 1451.61,
+    "data_source": "simulated",
+    "weather_sources": 3,
+    "llm_model_used": "nvidia/nemotron-3-super-120b-a12b:free"
+}
