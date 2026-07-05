@@ -4,7 +4,7 @@ from app.core.config import CityConfig
 from app.schemas.weather import WeatherData, WeatherReport, SourceValidation
 from app.schemas.market import MarketSnapshot
 from app.services.weather_service import fetch_openweather, fetch_openweather_forecast, fetch_weatherapi
-from app.services.apify_service import fetch_apify_weather, fetch_apify_scraper
+from app.services.apify_service import fetch_apify_weather
 from app.agents.market_data_agent import MarketDataAgent
 from loguru import logger
 
@@ -23,7 +23,6 @@ class ResearchAgent:
             fetch_openweather_forecast(city_key, city_config),
             fetch_weatherapi(city_key, city_config),
             fetch_apify_weather(city_key, city_config),
-            fetch_apify_scraper(city_key, city_config),
         ]
         results = await asyncio.gather(*weather_tasks, return_exceptions=True)
         sources = [r for r in results if isinstance(r, WeatherData)]

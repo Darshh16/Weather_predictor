@@ -30,7 +30,6 @@ class Settings(BaseSettings):
     hermes_base_url: str = "http://localhost:8001/v1"
     hermes_enabled: bool = False
 
-    llm_model: str = "meta-llama/llama-3.1-8b-instruct:free"
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
     initial_bankroll: float = 10000.0

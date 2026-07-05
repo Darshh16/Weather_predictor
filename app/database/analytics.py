@@ -38,26 +38,29 @@ class AnalyticsEngine:
             df = conn.execute("""
                 SELECT
                     COUNT(*) as total_trades,
-                    SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) as wins,
-                    SUM(CASE WHEN pnl < 0 THEN 1 ELSE 0 END) as losses,
-                    SUM(pnl) as total_pnl,
-                    AVG(pnl) as avg_pnl,
-                    MAX(pnl) as best_trade,
-                    MIN(pnl) as worst_trade,
-                    AVG(kelly_fraction) as avg_kelly_utilization
-                FROM sqlite_db.trades WHERE status = 'closed'
+                    SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as resolved_trades,
+                    SUM(CASE WHEN status = 'closed' AND pnl > 0 THEN 1 ELSE 0 END) as wins,
+                    SUM(CASE WHEN status = 'closed' AND pnl < 0 THEN 1 ELSE 0 END) as losses,
+                    SUM(CASE WHEN status = 'closed' THEN pnl ELSE 0 END) as total_pnl,
+                    AVG(CASE WHEN status = 'closed' THEN pnl ELSE NULL END) as avg_pnl,
+                    MAX(CASE WHEN status = 'closed' THEN pnl ELSE NULL END) as best_trade,
+                    MIN(CASE WHEN status = 'closed' THEN pnl ELSE NULL END) as worst_trade,
+                    AVG(CASE WHEN status = 'closed' THEN kelly_fraction ELSE NULL END) as avg_kelly_utilization
+                FROM sqlite_db.trades
             """).fetchdf()
             conn.close()
             if df.empty or df["total_trades"].iloc[0] == 0:
-                return {"total_trades": 0, "wins": 0, "losses": 0, "total_pnl": 0,
+                return {"total_trades": 0, "resolved_trades": 0, "wins": 0, "losses": 0, "total_pnl": 0,
                         "avg_pnl": 0, "best_trade": 0, "worst_trade": 0, "avg_kelly_utilization": 0, "win_rate": 0, "roi": 0}
-            result = df.iloc[0].to_dict()
-            result["win_rate"] = result["wins"] / max(result["total_trades"], 1) * 100
-            result["roi"] = result["total_pnl"] / get_settings().initial_bankroll * 100
+            
+            result = df.fillna(0).iloc[0].to_dict()
+            from app.utils.metrics import calculate_win_rate
+            result["win_rate"] = calculate_win_rate(result.get("wins") or 0, result.get("losses") or 0)
+            result["roi"] = (result.get("total_pnl") or 0) / get_settings().initial_bankroll * 100
             return result
         except Exception as e:
             logger.error(f"Analytics error (trading_performance): {e}")
-            return {"total_trades": 0, "wins": 0, "losses": 0, "total_pnl": 0,
+            return {"total_trades": 0, "resolved_trades": 0, "wins": 0, "losses": 0, "total_pnl": 0,
                     "avg_pnl": 0, "best_trade": 0, "worst_trade": 0, "avg_kelly_utilization": 0, "win_rate": 0, "roi": 0}
 
     def hedge_effectiveness(self) -> dict:
@@ -85,7 +88,7 @@ class AnalyticsEngine:
             conn = self._connect()
             df = conn.execute("""
                 SELECT
-                    DATE(created_at) as date,
+                    CAST(DATE(created_at) AS VARCHAR) as date,
                     COUNT(*) as trades,
                     SUM(pnl) as daily_pnl,
                     SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) as daily_wins
@@ -107,14 +110,14 @@ class AnalyticsEngine:
                 SELECT
                     city,
                     COUNT(*) as total_trades,
-                    SUM(pnl) as total_pnl,
-                    AVG(pnl) as avg_pnl,
+                    SUM(CASE WHEN status = 'closed' THEN pnl ELSE 0 END) as total_pnl,
+                    AVG(CASE WHEN status = 'closed' THEN pnl ELSE NULL END) as avg_pnl,
                     SUM(CASE WHEN trade_type = 'hedge' THEN 1 ELSE 0 END) as hedges
                 FROM sqlite_db.trades
                 GROUP BY city
             """).fetchdf()
             conn.close()
-            return df.to_dict("records") if not df.empty else []
+            return df.fillna(0).to_dict("records") if not df.empty else []
         except Exception as e:
             logger.error(f"Analytics error (city_breakdown): {e}")
             return []

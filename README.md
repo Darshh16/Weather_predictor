@@ -71,6 +71,10 @@ The system calls Hermes Agent via its OpenAI-compatible API. Two modes:
 
 No code changes needed to switch — same interface, different backend.
 
+## Configuration Notes
+
+`HEDGE_EDGE_THRESHOLD` is configurable; default is 0.02 (conservative — only hedges when edge nearly vanishes or reverses). For demonstration purposes in the video, this was temporarily raised to make hedge behavior observable within a single session, since real edge decay would normally take multiple days/predictions to cross a 2% threshold.
+
 ## Endpoints
 
 | Method | Path | Description |

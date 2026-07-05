@@ -182,6 +182,21 @@ async def hedge(request: Request, city: str = Form(...)):
         return HTMLResponse(f'<div class="text-red-400 p-2">Hedge error: {str(e)}</div>')
 
 
+@router.post("/resolve/{trade_id}", response_class=HTMLResponse)
+async def resolve(request: Request, trade_id: int):
+    try:
+        trade = await trading_agent.resolve_trade(trade_id)
+        if trade:
+            return HTMLResponse(f"""
+            <div class="text-emerald-400 p-2 bg-emerald-500/10 rounded-lg text-xs mt-1">
+                ✅ Resolved: {'Won' if trade.pnl > 0 else 'Lost'} ${abs(trade.pnl):.2f} (Exit: {trade.exit_price:.2f})
+            </div>""")
+        return HTMLResponse('<div class="text-amber-400 p-2 text-xs mt-1">Could not resolve trade.</div>')
+    except Exception as e:
+        logger.error(f"Resolution failed for trade {trade_id}: {e}")
+        return HTMLResponse(f'<div class="text-red-400 p-2 text-xs mt-1">Error: {str(e)}</div>')
+
+
 @router.post("/refresh", response_class=HTMLResponse)
 async def refresh(request: Request):
     results = []

@@ -181,6 +181,57 @@ class TradingAgent:
         await self._log("TRADE_CLOSE", trade.city, f"Closed trade #{trade_id}: PnL ${pnl:.2f}")
         return trade
 
+    async def resolve_trade(self, trade_id: int) -> Optional[Trade]:
+        import random
+        row = await fetch_one("SELECT * FROM trades WHERE id=? AND status='open'", (trade_id,))
+        if not row:
+            return None
+        trade = Trade(**row)
+        
+        pred_row = await fetch_one("SELECT * FROM predictions WHERE id=?", (trade.prediction_id,))
+        if not pred_row:
+            logger.error(f"Cannot resolve trade {trade_id}: no prediction found")
+            return None
+            
+        model_prob = pred_row["model_probability"]
+        random_val = random.random()
+        outcome_yes_won = random_val <= model_prob
+        
+        exit_price = 1.0 if outcome_yes_won else 0.0
+        
+        if (trade.direction == "YES" and outcome_yes_won) or (trade.direction == "NO" and not outcome_yes_won):
+            pnl = trade.size * (1 - trade.entry_price) / trade.entry_price
+        else:
+            pnl = -trade.size
+            
+        reason = f"SIMULATED_RESOLUTION: Model predicted {model_prob:.1%}. Random roll: {random_val:.3f}. Result: {'YES' if outcome_yes_won else 'NO'}."
+        
+        await execute(
+            """UPDATE trades SET status='closed', exit_price=?, pnl=?, trade_type='resolution',
+               reasoning=reasoning||' | '||?, closed_at=CURRENT_TIMESTAMP WHERE id=?""",
+            (exit_price, round(pnl, 2), reason, trade_id),
+        )
+        
+        portfolio = await fetch_one("SELECT * FROM portfolio ORDER BY id DESC LIMIT 1")
+        new_balance = portfolio["balance"] + trade.size + pnl
+        wins_delta = 1 if pnl > 0 else 0
+        losses_delta = 1 if pnl < 0 else 0
+        
+        await execute(
+            """UPDATE portfolio SET balance=?, total_pnl=total_pnl+?, open_trades=MAX(0,open_trades-1),
+               wins=wins+?, losses=losses+?, updated_at=CURRENT_TIMESTAMP
+               WHERE id=(SELECT MAX(id) FROM portfolio)""",
+            (round(new_balance, 2), round(pnl, 2), wins_delta, losses_delta),
+        )
+        
+        trade.pnl = round(pnl, 2)
+        trade.exit_price = exit_price
+        trade.status = "closed"
+        await self._log("TRADE_RESOLVED", trade.city, f"Resolved trade #{trade_id}: PnL ${pnl:.2f}")
+        logger.info(f"Resolved trade {trade_id} on {trade.city}: PnL ${pnl:.2f}. {reason}")
+        return trade
+
+
     async def _log(self, action: str, city: str, message: str):
         await execute(
             "INSERT INTO agent_logs (level, agent, action, message) VALUES (?,?,?,?)",

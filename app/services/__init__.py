@@ -1,4 +1,4 @@
 from app.services.weather_service import fetch_openweather, fetch_openweather_forecast, fetch_weatherapi
-from app.services.apify_service import fetch_apify_weather, fetch_apify_scraper
-from app.services.polymarket_service import search_weather_markets, get_market_snapshot
+from app.services.apify_service import fetch_apify_weather
+from app.services.polymarket_service import get_market_snapshot
 from app.services.llm_service import chat_completion, parse_json_response

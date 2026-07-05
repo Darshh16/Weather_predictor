@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS market_snapshots (
     volume REAL,
     liquidity REAL,
     resolution_date TEXT,
+    data_source TEXT DEFAULT 'simulated',
     raw_json TEXT,
     fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -89,6 +90,13 @@ CREATE TABLE IF NOT EXISTS agent_logs (
     action TEXT,
     message TEXT,
     details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS discovery_cache (
+    cache_key TEXT PRIMARY KEY,
+    cache_value TEXT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """

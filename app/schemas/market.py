@@ -12,6 +12,7 @@ class MarketSnapshot(BaseModel):
     volume: float = 0.0
     liquidity: float = 0.0
     resolution_date: Optional[str] = None
+    data_source: str = "simulated"
     raw_json: Optional[str] = None
     fetched_at: datetime = Field(default_factory=datetime.utcnow)
 

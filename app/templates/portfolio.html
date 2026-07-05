@@ -24,7 +24,7 @@
         <div class="glass-card p-5">
             <p class="text-xs text-gray-400 uppercase tracking-wider">Win Rate</p>
             <p class="text-2xl font-bold text-amber-400 mt-1">{{ "%.1f"|format(portfolio.win_rate) }}%</p>
-            <p class="text-xs text-gray-500 mt-1">{{ portfolio.wins }}W / {{ portfolio.losses }}L of {{ portfolio.total_trades }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ portfolio.wins }}W / {{ portfolio.losses }}L resolved</p>
         </div>
     </div>
 
@@ -60,13 +60,18 @@
                             {% if t.edge_at_entry > 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
                             {{ "%+.4f"|format(t.edge_at_entry) }}</td>
                         <td class="py-2 px-3">
-                            <form hx-post="/hedge" hx-target="#hedge-result-{{ t.id }}" hx-swap="innerHTML" class="inline">
+                            <form hx-post="/hedge" hx-target="#action-result-{{ t.id }}" hx-swap="innerHTML" class="inline">
                                 <input type="hidden" name="city" value="{{ t.city }}">
                                 <button type="submit"
                                     class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-400
                                     rounded text-xs transition-all">🔄 Check Hedge</button>
                             </form>
-                            <div id="hedge-result-{{ t.id }}" class="mt-1"></div>
+                            <form hx-post="/resolve/{{ t.id }}" hx-target="#action-result-{{ t.id }}" hx-swap="innerHTML" class="inline ml-1">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-400
+                                    rounded text-xs transition-all">🏁 Resolve</button>
+                            </form>
+                            <div id="action-result-{{ t.id }}" class="mt-1"></div>
                         </td>
                     </tr>
                     {% endfor %}

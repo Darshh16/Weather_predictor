@@ -15,19 +15,33 @@ class PortfolioAgent:
         hedges = await fetch_all(
             "SELECT * FROM trades WHERE trade_type='hedge' ORDER BY created_at DESC LIMIT 10"
         )
-        open_exposure = sum(t["size"] for t in open_positions)
+        
+        m2m_value = 0.0
+        for t in open_positions:
+            snap = await fetch_one("SELECT * FROM market_snapshots WHERE city=? ORDER BY fetched_at DESC LIMIT 1", (t["city"],))
+            if snap:
+                current_price = snap["yes_price"] if t["direction"] == "YES" else snap["no_price"]
+            else:
+                current_price = t["entry_price"]
+            # shares = size / entry_price
+            m2m_value += (t["size"] / t["entry_price"]) * current_price if t["entry_price"] > 0 else t["size"]
+
         total_trades = portfolio["total_trades"]
         wins = portfolio["wins"]
+        losses = portfolio["losses"]
+        
+        from app.utils.metrics import calculate_win_rate
+        
         return PortfolioState(
             balance=portfolio["balance"],
-            equity=portfolio["balance"] + open_exposure,
+            equity=portfolio["balance"] + m2m_value,
             total_trades=total_trades,
             open_trades=len(open_positions),
             wins=wins,
-            losses=portfolio["losses"],
+            losses=losses,
             total_pnl=portfolio["total_pnl"],
             max_drawdown=portfolio["max_drawdown"],
-            win_rate=round(wins / max(total_trades, 1) * 100, 1),
+            win_rate=calculate_win_rate(wins, losses),
             open_positions=[Trade(**t) for t in open_positions],
             recent_trades=[Trade(**t) for t in recent],
             recent_hedges=[Trade(**t) for t in hedges],

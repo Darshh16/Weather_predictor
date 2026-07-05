@@ -23,6 +23,13 @@
             </div>
 
             {% if market_data.get(key) %}
+            <div class="flex items-center gap-2 mb-2">
+                {% if market_data[key].data_source == 'live' %}
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">LIVE</span>
+                {% else %}
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">SIMULATED</span>
+                {% endif %}
+            </div>
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <div class="bg-emerald-500/10 rounded-lg p-3 text-center">
                     <p class="text-xs text-gray-400">YES Price</p>
